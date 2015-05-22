@@ -65,7 +65,7 @@ def tile_array(a, maxx=256, maxy=256, maxz=3, padxy=True):
             
         
     pngarray = pngarray.transpose([1, 0, 2]) # swap from row major to column (or vice versa, not sure which way round this is!)
-    
+
     return pngarray[::-1, ...] # revese first axis to be compatible with textures
 
     
@@ -85,11 +85,11 @@ def write_png(array, savep, height=256, width=256):
     if (height**0.5)%1 != 0.0 or (width**0.5)%1 != 0.0:
         raise ValueError("Dimensions must be square numbers i.e. sqrt(n) must be an integer")
     
-    png_writer = png.Writer(height=height, width=width, bitdepth=8)
-    with open(savep, 'wb') as f:
-        flat_array = array.reshape(-1, width*3) #assuming RGB i.e. 3 channels
-        png_writer.write(f, flat_array)
-    
+        png_writer = png.Writer(height=height, width=width, bitdepth=8)
+        with open(savep, 'wb') as f:
+            flat_array = array.reshape(-1, width*3) #assuming RGB i.e. 3 channels
+            png_writer.write(f, flat_array)
+        
 
 def array_to_png(data, filename, height=256, width=256, padxy=True):
     """ Converts a x,y,z 3D array to a tiled png image """
