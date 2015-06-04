@@ -3,3 +3,5 @@ Pypng
 Requests
 Iris
 Tempfile
+Watchdog
+Monty
