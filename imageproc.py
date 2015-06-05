@@ -9,9 +9,6 @@ import sys
 sys.path.append("/Users/niall/Projects/monty/lib/")
 import monty.vinterp
 
-
-iris.FUTURE.cell_datetime_objects = True
-
 MAX_VAL = 255
 
 
@@ -92,7 +89,7 @@ def restratifyAltLevels(c, nalt):
     return restratified_data_cube
 
 
-def horizRegrid(c, nlat, nlon, min_lat, max_lat, min_lon, max_lon):
+def horizRegrid(c, nlat, nlon, extent):
     """
     Takes a cube (in any projection) and regrids it onto a
     recatilinear nlat x nlon grid spaced linearly between
@@ -101,16 +98,17 @@ def horizRegrid(c, nlat, nlon, min_lat, max_lat, min_lon, max_lon):
     u = iris.unit.Unit("degrees")
     cs = iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS)
 
-    latc = iris.coords.DimCoord(np.linspace(min_lat, max_lat, nlat),
-                                    standard_name="latitude",
-                                    units=u,
-                                    coord_system=cs)
-    latc.guess_bounds()
-    lonc = iris.coords.DimCoord(np.linspace(min_lon, max_lon, nlon),
+    lonc = iris.coords.DimCoord(np.linspace(extent[0], extent[1], nlon),
                                     standard_name="longitude",
                                     units=u,
                                     coord_system=cs)
     lonc.guess_bounds()
+
+    latc = iris.coords.DimCoord(np.linspace(extent[2], extent[3], nlat),
+                                    standard_name="latitude",
+                                    units=u,
+                                    coord_system=cs)
+    latc.guess_bounds()
 
     grid_cube = iris.cube.Cube(np.empty([nlat, nlon]))
     grid_cube.add_dim_coord(latc, 0)
@@ -120,18 +118,42 @@ def horizRegrid(c, nlat, nlon, min_lat, max_lat, min_lon, max_lon):
     
     return rg_c
 
+def trimOutsideDomain(c):
+    """
+    When we regrid from polar stereographic to rectalinear, the resultant
+    shape is non-orthogonal, and is surrounded by masked values. This
+    function trims the cube to be an orthogonal region of real data.
 
-def regridData(c, nalt, nlat, nlon, min_lat, max_lat, min_lon, max_lon):
+    Its a little bespoke and make be unscescesarry if we can swith
+    to an AreaWeighted function.
+
+    """
+    # assess the top layer as its likely to be free
+    # of values that are maksed for terrain.
+    lonmean = np.mean(c[:, :, -1].data.mask, axis=1)
+    glonmean = np.gradient(lonmean)
+    uselat = (lonmean < 1.0) & (np.fabs(glonmean) < 0.004)
+
+    latmean = np.mean(c[:, :, -1].data.mask, axis=0)
+    glatmean = np.gradient(latmean)
+    uselon = (latmean < 1.0) & (np.fabs(glatmean) < 0.004)
+
+    return c[uselat, uselon, :]
+
+
+def regridData(c, regrid_shape, extent):
     """
     Regrids a cube onto a nalt x nlat x nlon recatlinear cube
     """
-    c_rsa = restratifyAltLevels(c, nalt)
-    c_rsa_hrg = horizRegrid(c_rsa, nlat, nlon, min_lat, max_lat, min_lon, max_lon)
+    c = restratifyAltLevels(c, regrid_shape[2])
+    c = horizRegrid(c, regrid_shape[1], regrid_shape[0], extent)
+    # remove the to latyer which seems to artificially masked from regridding
+    c = trimOutsideDomain(c[:, :, :-1])
 
-    if np.isnan(c_rsa_hrg.data.compressed().mean()):
+    if np.isnan(c.data.compressed().mean()):
         raise ValueError("Regridded data is NaN - are the lat/lon ranges compatable?")
 
-    return c_rsa_hrg
+    return c
 
 
 def procDataCube(c):
@@ -243,33 +265,33 @@ def writePng(array, f, height=4096, width=4096, nchannels=3, alpha="RGB"):
 
 ############ post data #################
 
-def getPostDict(cube, mime_type="image/png"):
-    """
-    Converts relevant cube metadata into a dictionary of metadata which is compatable
-    with the data service.
+    def getPostDict(cube, mime_type="image/png"):
+        """
+        Converts relevant cube metadata into a dictionary of metadata which is compatable
+        with the data service.
 
-    """
-    payload = {'forecast_reference_time': cube.coord("forecast_reference_time").cell(0).point.isoformat()+".000Z",
-               'forcast_time' : cube.coord("time").cell(0).point.isoformat()+".000Z",
-               'phenomenon' : cube.var_name,
-               'mime_type' : mime_type,
-               'model' : 'uk_v'}#,
-               # 'data_dimensions': {'x': cube.shape[0], 'y': cube.shape[1], 'z': cube.shape[2]}}
-    return payload
+        """
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            payload = {'forecast_reference_time': cube.coord("forecast_reference_time").cell(0).point.isoformat()+".000Z",
+                       'forecast_time' : cube.coord("time").cell(0).point.isoformat()+".000Z",
+                       'phenomenon' : cube.var_name,
+                       'mime_type' : mime_type,
+                       'model' : 'uk_v'}#,
+                       # 'data_dimensions': {'x': cube.shape[0], 'y': cube.shape[1], 'z': cube.shape[2]}}
+            return payload
 
 ############### main function ###############
 def makeImage(loadConstraint,
                dataFile,
                image_dest,
-               max_lat = 60.866, min_lat = 47.924, max_lon = 6.406, min_lon = -13.62,
+               extent,
+               regrid_shape = [400, 400, 35],
                field_width = 4096, field_height = 4096):
 
     data = loadData(loadConstraint, dataFile)
 
     san_data = sanitizeAlt(data)
-    rg_data = regridData(san_data, nalt=35, nlat=400, nlon=400,
-                                        min_lat=min_lat, max_lat=max_lat,
-                                        min_lon=min_lon, max_lon=max_lon)
+    rg_data = regridData(san_data, regrid_shape=regrid_shape, extent=extent)
     proced_data = procDataCube(rg_data)
     shadows = getShadows(proced_data)
 
@@ -286,3 +308,5 @@ def makeImage(loadConstraint,
     with open("temp.png", "rb") as img:
         payload["data"] = img
         r = requests.post(image_dest, payload)
+        if r.status_code != 201:
+            raise IOError(r.status_code, r.text)
