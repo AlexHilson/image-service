@@ -265,20 +265,20 @@ def writePng(array, f, height=4096, width=4096, nchannels=3, alpha="RGB"):
 
 ############ post data #################
 
-    def getPostDict(cube, mime_type="image/png"):
-        """
-        Converts relevant cube metadata into a dictionary of metadata which is compatable
-        with the data service.
+def getPostDict(cube, mime_type="image/png"):
+    """
+    Converts relevant cube metadata into a dictionary of metadata which is compatable
+    with the data service.
 
-        """
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            payload = {'forecast_reference_time': cube.coord("forecast_reference_time").cell(0).point.isoformat()+".000Z",
-                       'forecast_time' : cube.coord("time").cell(0).point.isoformat()+".000Z",
-                       'phenomenon' : cube.var_name,
-                       'mime_type' : mime_type,
-                       'model' : 'uk_v'}#,
-                       # 'data_dimensions': {'x': cube.shape[0], 'y': cube.shape[1], 'z': cube.shape[2]}}
-            return payload
+    """
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        payload = {'forecast_reference_time': cube.coord("forecast_reference_time").cell(0).point.isoformat()+".000Z",
+                   'forecast_time' : cube.coord("time").cell(0).point.isoformat()+".000Z",
+                   'phenomenon' : 'cloud_fraction_in_a_layer',#cube.var_name,
+                   'mime_type' : mime_type,
+                   'model' : 'uk_v'}#,
+                   # 'data_dimensions': {'x': cube.shape[0], 'y': cube.shape[1], 'z': cube.shape[2]}}
+        return payload
 
 ############### main function ###############
 def makeImage(loadConstraint,
@@ -299,14 +299,11 @@ def makeImage(loadConstraint,
     shadows_tiled = tileArray(shadows.data)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)
-    # with tempfile.SpooledTemporaryFile(max_size=2e7) as img:
-    with open("temp.png", "wb") as img:
+    with tempfile.SpooledTemporaryFile(max_size=2e7) as img:
         writePng(img_data_out, img,
                   height=field_height, width=field_width*2,
                   nchannels=3, alpha=False)
-    payload = getPostDict(data)
-    with open("temp.png", "rb") as img:
-        payload["data"] = img
-        r = requests.post(image_dest, payload)
+        payload = getPostDict(data)
+        r = requests.post(image_dest, data=payload, files={"data": img})
         if r.status_code != 201:
             raise IOError(r.status_code, r.text)
