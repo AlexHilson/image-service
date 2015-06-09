@@ -28,22 +28,14 @@ if __name__ == '__main__':
 
     """
     class MyHandler(PatternMatchingEventHandler):
-        @staticmethod
-        def process(data_file):
-            try:
-                sp.call(["./imageproc.py", "--analysis", call_args.analysis, data_file])
-            except Exception as e:
-                raise
-            else:
-                logger.info("Finished processing " + data_file)
 
         def on_moved(self, event):
             logger.info("------------------------------------")
             logger.info(event.dest_path + " detected")
-            time.sleep(5)
+            time.sleep(3)
             try:
-                logger.info("Processing " + event.dest_path)
-                self.process(event.dest_path)
+                logger.info("Submitting " + event.dest_path)
+                sp.Popen(["./imageproc.py", "--analysis", call_args.analysis, event.dest_path])
             except KeyboardInterrupt:
                 raise
             except BaseException as e:
