@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse as ap
 import time
 from watchdog.observers import Observer  
 from watchdog.events import PatternMatchingEventHandler 
@@ -9,12 +10,7 @@ import iris
 import sys
 sys.path.append(".")
 import imageproc
-
-THREDDS_SERVER = "/Users/niall/Data/PretendTHREDDS/"
-DATA_SERVER = "http://ec2-52-16-246-202.eu-west-1.compute.amazonaws.com:9000/molab-3dwx-ds/images/"
-DATA_CONSTRAINT = iris.Constraint(model_level_number=lambda v: v.point < 60)
-UK_V_EXTENT = [-13.62, 6.406, 47.924, 60.866]
-REGRID_SHAPE = [400, 400, 35]
+import config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -25,61 +21,52 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def run_async(func):
-    """
-        run_async(func)
-            function decorator, intended to make "func" run in a separate
-            thread (asynchronously).
-            Returns the created Thread object
-    """
-    from threading import Thread
-    from functools import wraps
-
-    @wraps(func)
-    def async_func(*args, **kwargs):
-        func_hl = Thread(target = func, args = args, kwargs = kwargs)
-        func_hl.start()
-        return func_hl
-
-    return async_func
-
-
-class MyHandler(PatternMatchingEventHandler):
-    patterns = ["*.pp"]
-
-    def process(self, event):
-        try:
-            @run_async
-            imageproc.makeImage(DATA_CONSTRAINT,
-	                            event.src_path,
-	                            DATA_SERVER,
-                                UK_V_EXTENT,
-                                REGRID_SHAPE)
-        except Exception as e:
-            raise
-        else:
-            logger.info("Finished processing " + event.src_path)
-
-    def on_created(self, event):
-        logger.info("------------------------------------")
-    	logger.info(event.src_path + " " + event.event_type)
-        logger.info("Processing " + event.src_path)
-        success = False
-        for attempt in range(100):
-            time.sleep(2)
-            try:
-                self.process(event)
-            except BaseException as e:
-                pass
-            else:
-                success = True
-                break
-        if not success:
-            logger.exception(e)
-
 if __name__ == '__main__':
+    """
+    Watchdog class defined in __main__ so that it has access to the
+    config variables
+
+    """
+    class MyHandler(PatternMatchingEventHandler):
+        patterns = config.source_files
+
+        def process(self, event):
+            try:
+                imageproc.makeImage(modcon.data_constraint,
+                                    event.src_path,
+                                    config.img_data_server,
+                                    modcon.extent,
+                                    modcon.regrid_shape)
+            except Exception as e:
+                raise
+            else:
+                logger.info("Finished processing " + event.src_path)
+
+        def on_created(self, event):
+            logger.info("------------------------------------")
+            logger.info(event.src_path + " " + event.event_type)
+            logger.info("Processing " + event.src_path)
+            success = False
+            for attempt in range(100):
+                time.sleep(2)
+                try:
+                    self.process(event)
+                except KeyboardInterrupt:
+                    raise
+                except BaseException as e:
+                    pass
+                else:
+                    success = True
+                    break
+            if not success:
+                logger.exception(e)
+
+    modconfname = "UK-V"
+    modcon = ap.Namespace(**config.models[modconfname])
+
+
     observer = Observer()
-    observer.schedule(MyHandler(), path=THREDDS_SERVER)
+    observer.schedule(MyHandler(), path=config.thredds_server)
     observer.start()
 
     logger.info("******* Image Service started *******")
@@ -90,5 +77,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.info("******* Image Service stopped *******")
         observer.stop()
-
     observer.join()
+

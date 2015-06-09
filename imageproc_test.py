@@ -1,5 +1,6 @@
 import unittest
 
+import argparse as ap
 import datetime
 import iris
 import requests
@@ -11,22 +12,20 @@ import sys
 sys.path.append(".")
 import imageproc
 
-iris.FUTURE.cell_datetime_objects = True
+import config
+modlecon = ap.Namespace(**config.models["UK-V"])
 
-THREDDS_SERVER =  "/Users/niall/Data/PretendTHREDDS/"
-DATA_SERVER = "http://ec2-52-16-246-202.eu-west-1.compute.amazonaws.com:9000/molab-3dwx-ds/media/"
+iris.FUTURE.cell_datetime_objects = True
 
 class IntegrationTest(unittest.TestCase):
 
     def test_makekImage(self):
-        levcon = iris.Constraint(model_level_number=lambda v: v.point < 60)
-
         imageproc.makeImage(
-              levcon,
-              os.path.join(THREDDS_SERVER, "test_data", "synth_cloud_fraction.pp"),
-              DATA_SERVER,
-              extent = [-13.62, 6.406, 47.924, 60.866],
-              regrid_shape = [400, 400, 35],
+              modlecon.data_constraint,
+              os.path.join(config.thredds_server, "test_data", "synth_cloud_fraction.pp"),
+              config.img_data_server,
+              extent = modlecon.extent,
+              regrid_shape = modlecon.regrid_shape,
               field_width = 4096, field_height = 4096)
 
 if __name__ == '__main__':
