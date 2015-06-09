@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import argparse as ap
-import io
 import iris
+import io
 import numpy as np
 import png
 import requests

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import argparse as ap
+import iris
+import logging
+import subprocess as sp
 import time
 from watchdog.observers import Observer  
 from watchdog.events import PatternMatchingEventHandler 
-import logging
-import iris
-import subprocess as sp
 
 import sys
 sys.path.append(".")
