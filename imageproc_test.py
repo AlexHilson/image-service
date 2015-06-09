@@ -26,7 +26,7 @@ class IntegrationTest(unittest.TestCase):
               config.img_data_server,
               extent = modlecon.extent,
               regrid_shape = modlecon.regrid_shape,
-              field_width = 4096, field_height = 4096)
+              field_width = modelcon.field_width, field_height = modelcon.field_height)
 
 if __name__ == '__main__':
     unittest.main()

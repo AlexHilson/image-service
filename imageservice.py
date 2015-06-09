@@ -6,10 +6,10 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler 
 import logging
 import iris
+import subprocess as sp
 
 import sys
 sys.path.append(".")
-import imageproc
 import config
 
 logger = logging.getLogger(__name__)
@@ -32,11 +32,7 @@ if __name__ == '__main__':
 
         def process(self, event):
             try:
-                imageproc.makeImage(modcon.data_constraint,
-                                    event.src_path,
-                                    config.img_data_server,
-                                    modcon.extent,
-                                    modcon.regrid_shape)
+                sp.call(["./imageproc.py", "--analysis", call_args.analysis, event.src_path])
             except Exception as e:
                 raise
             else:
@@ -61,9 +57,11 @@ if __name__ == '__main__':
             if not success:
                 logger.exception(e)
 
-    modconfname = "UK-V"
-    modcon = ap.Namespace(**config.models[modconfname])
-
+    
+    argparser = ap.ArgumentParser()
+    argparser.add_argument("-a", "--analysis", default="default",
+        type=str, help="Name of analysis settings, as defined in config.py")
+    call_args = argparser.parse_args()
 
     observer = Observer()
     observer.schedule(MyHandler(), path=config.thredds_server)

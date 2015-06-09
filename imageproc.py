@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import argparse as ap
 import io
 import iris
 import numpy as np
@@ -9,34 +12,9 @@ import sys
 sys.path.append("/Users/niall/Projects/monty/lib/")
 import monty.vinterp
 
-MAX_VAL = 255
+sys.path.append(".")
+import config as conf
 
-
-################# Loading data ###############################
-
-def getTopographyFile():
-    """
-    Gets a topography file for the correct area
-
-    """ 
-    return "/Users/niall/Data/ukv/ukv_orog.pp"
-
-
-def loadData(loadConstraint, dataFile):
-    """
-    Loads data along with its topography file in order for Iris to calculate the
-    altitude derived coord
-
-    """
-    c = iris.load_cube([dataFile, getTopographyFile()], loadConstraint)
-    c.transpose([2, 1, 0]) # change order of axes so that they are the same as the vis
-
-    if [_.name() for _ in c.dim_coords] != [ "grid_longitude", "grid_latitude", "model_level_number" ]:
-        raise IOError("Loaded cube did not have the expected dimensions")
-    if "altitude" not in [_.name() for _ in c.derived_coords]:
-        raise IOError("Derived altitude coord not created - probelm with topography?")
-
-    return c
 
 ############## Data processing ####################
 
@@ -167,8 +145,8 @@ def procDataCube(c):
     NB that all masked values will also be converted to MAX_VAL.
 
     """
-    c.data *= MAX_VAL
-    c.data = np.ma.fix_invalid(c.data, fill_value=MAX_VAL)
+    c.data *= conf.max_val
+    c.data = np.ma.fix_invalid(c.data, fill_value=conf.max_val)
 
     return c
 
@@ -281,14 +259,27 @@ def getPostDict(cube, mime_type="image/png"):
         return payload
 
 ############### main function ###############
-def makeImage(loadConstraint,
-               dataFile,
+def procTimeSliceToImage(
+               data,
                image_dest,
                extent,
-               regrid_shape = [400, 400, 35],
-               field_width = 4096, field_height = 4096):
+               regrid_shape,
+               field_width,
+               field_height):
+    """
+    Main processing function. Processes an model_level_number, lat, lon cube,
+    including all regridding and restratification of data,
+    calculates shadows, and then ultimately posts a tiled
+    image to the data service.
 
-    data = loadData(loadConstraint, dataFile)
+    Args:
+        * data (iris cube): lat, lon, model_level_number cube 
+        * image_dest (str): URL to the data service image destination
+        * regrid_shape (tuple): lon, lat, alt dimensions to regrid to
+        * field_width (int): image width
+        * field_height (int): image height
+
+    """
 
     san_data = sanitizeAlt(data)
     rg_data = regridData(san_data, regrid_shape=regrid_shape, extent=extent)
@@ -307,3 +298,39 @@ def makeImage(loadConstraint,
         r = requests.post(image_dest, data=payload, files={"data": img})
         if r.status_code != 201:
             raise IOError(r.status_code, r.text)
+
+
+def analyseFile(analname, dataFile):
+    """
+    Wrapper round procTimeSliceToImage which slices over any time dimension
+    and parses config settings
+
+    """
+
+    anal_conf = ap.Namespace(**conf.anals[call_args.analysis])
+
+    data = iris.load_cube([call_args.data_file, conf.topog_file], anal_conf.data_constraint)
+    if "altitude" not in [_.name() for _ in data.derived_coords]:
+        raise IOError("Derived altitude coord not present - probelm with topography?")
+    conf_args = (conf.img_data_server,
+                 anal_conf.extent,
+                 anal_conf.regrid_shape,
+                 anal_conf.field_width,
+                 anal_conf.field_height)
+    if len(data.coord("time").points) > 1:
+        data.transpose([0, 3, 2, 1]) # change order of axes so that they are the same as the vis
+        for time_slice in data.slices_over("time"):
+            procTimeSliceToImage([time_slice, conf.topog_file], *conf_args)
+    else:
+        data.transpose([2, 1, 0]) # change order of axes so that they are the same as the vis
+        procTimeSliceToImage(data, *conf_args)
+
+
+if __name__ == "__main__":
+    argparser = ap.ArgumentParser()
+    argparser.add_argument("-a", "--analysis", default="default",
+        type=str, help="Name of analysis settings, as defined in config.py")
+    argparser.add_argument("data_file", metavar="file", type=str, help="URI of file to analyse")
+    call_args = argparser.parse_args()
+
+    analyseFile(call_args.analysis, call_args.data_file)
