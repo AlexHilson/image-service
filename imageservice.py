@@ -28,33 +28,25 @@ if __name__ == '__main__':
 
     """
     class MyHandler(PatternMatchingEventHandler):
-        patterns = config.source_files
-
-        def process(self, event):
+        @staticmethod
+        def process(data_file):
             try:
-                sp.call(["./imageproc.py", "--analysis", call_args.analysis, event.src_path])
+                sp.call(["./imageproc.py", "--analysis", call_args.analysis, data_file])
             except Exception as e:
                 raise
             else:
-                logger.info("Finished processing " + event.src_path)
+                logger.info("Finished processing " + data_file)
 
-        def on_created(self, event):
+        def on_moved(self, event):
             logger.info("------------------------------------")
-            logger.info(event.src_path + " " + event.event_type)
-            logger.info("Processing " + event.src_path)
-            success = False
-            for attempt in range(100):
-                time.sleep(2)
-                try:
-                    self.process(event)
-                except KeyboardInterrupt:
-                    raise
-                except BaseException as e:
-                    pass
-                else:
-                    success = True
-                    break
-            if not success:
+            logger.info(event.dest_path + " detected")
+            time.sleep(5)
+            try:
+                logger.info("Processing " + event.dest_path)
+                self.process(event.dest_path)
+            except KeyboardInterrupt:
+                raise
+            except BaseException as e:
                 logger.exception(e)
 
     
@@ -64,7 +56,9 @@ if __name__ == '__main__':
     call_args = argparser.parse_args()
 
     observer = Observer()
-    observer.schedule(MyHandler(), path=config.thredds_server)
+    observer.schedule(MyHandler(patterns=[config.source_files],
+                                ignore_patterns=["*.pp~"]),
+                      path=config.thredds_server)
     observer.start()
 
     logger.info("******* Image Service started *******")

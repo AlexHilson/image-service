@@ -309,7 +309,9 @@ def analyseFile(analname, dataFile):
 
     anal_conf = ap.Namespace(**conf.anals[call_args.analysis])
 
-    data = iris.load_cube([call_args.data_file, conf.topog_file], anal_conf.data_constraint)
+    data, topography = iris.load([call_args.data_file, conf.topog_file])
+    data = data.extract(anal_conf.data_constraint)
+
     if "altitude" not in [_.name() for _ in data.derived_coords]:
         raise IOError("Derived altitude coord not present - probelm with topography?")
     conf_args = (conf.img_data_server,
@@ -320,7 +322,7 @@ def analyseFile(analname, dataFile):
     if len(data.coord("time").points) > 1:
         data.transpose([0, 3, 2, 1]) # change order of axes so that they are the same as the vis
         for time_slice in data.slices_over("time"):
-            procTimeSliceToImage([time_slice, conf.topog_file], *conf_args)
+            procTimeSliceToImage(time_slice, *conf_args)
     else:
         data.transpose([2, 1, 0]) # change order of axes so that they are the same as the vis
         procTimeSliceToImage(data, *conf_args)
