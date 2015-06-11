@@ -1,10 +1,11 @@
 import iris
 
-max_val = 255
+max_val = 255 # maximum data value (i.e. 8 bit uint)
 thredds_server = "/Users/niall/Data/PretendTHREDDS/"
 img_data_server = "http://ec2-52-16-246-202.eu-west-1.compute.amazonaws.com:9000/molab-3dwx-ds/media/"
 source_files = "*.pp"
 topog_file = "/Users/niall/Data/ukv/ukv_orog.pp"
+sea_level = 3 # minimum altitude number
 
 # profiles are namespaces which contain setting for different analysis types
 profiles = {

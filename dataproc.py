@@ -15,7 +15,7 @@ Called by serveupimage.py
 
 """
 
-def sanitizeAlt(c, sea_level=3):
+def sanitizeAlt(c):
     """
     Takes a cube and sanitizes the altitude coordinates,
     including removing negative values or NaNs, and adding
@@ -24,10 +24,11 @@ def sanitizeAlt(c, sea_level=3):
 
     """
     sanitized_alt = c.coord("altitude").points
-    sanitized_alt[np.logical_not(np.isfinite(sanitized_alt))] = sea_level
-    sanitized_alt[sanitized_alt < sea_level] = sea_level
+    sanitized_alt[np.logical_not(np.isfinite(sanitized_alt))] = conf.sea_level
+    sanitized_alt[sanitized_alt < conf.sea_level] = conf.sea_level
     logaltcoord = iris.coords.AuxCoord(np.log(sanitized_alt), long_name="log_altitude")
-    c.add_aux_coord(logaltcoord, [0, 1, 2])
+    altcoorddims = c.coord_dims("altitude")
+    c.add_aux_coord(logaltcoord, altcoorddims)
 
     return c
 
@@ -49,17 +50,17 @@ def restratifyAltLevels(c, nalt):
                                                     extrapolation=monty.vinterp.EXTRAPOLATE_NAN,
                                                     interpolation=monty.vinterp.INTERPOLATE_LINEAR)
 
-    restratified_data_cube = c[:, :, :nalt].copy(data=np.ma.masked_invalid(restratified_data))
-    restratified_data_cube.remove_coord("model_level_number")
-    restratified_data_cube.remove_coord("sigma")
-    restratified_data_cube.remove_coord("level_height")
-    restratified_data_cube.remove_aux_factory(restratified_data_cube.aux_factories[0])
+    newcoords = list(c.dim_coords)
+    newcoords[alt_axis] = iris.coords.DimCoord(np.exp(log_levs), long_name="altitude", units="m")
+    dim_coords_and_dims = tuple([(crd, i) for i, crd in enumerate(newcoords)])
+    restratified_data_cube = iris.cube.Cube(data=np.ma.masked_invalid(restratified_data),
+                                            dim_coords_and_dims=dim_coords_and_dims)
+    restratified_data_cube.add_aux_coord(c.coord("forecast_reference_time"))
+    restratified_data_cube.metadata = c.metadata
 
     restratified_data_cube.coord("grid_latitude").guess_bounds()
     restratified_data_cube.coord("grid_longitude").guess_bounds()
-
-    alt_coord = iris.coords.DimCoord(np.exp(log_levs), long_name="altitude", units="m")
-    restratified_data_cube.add_dim_coord(alt_coord, alt_axis)
+    
     
     return restratified_data_cube
 
@@ -93,6 +94,7 @@ def horizRegrid(c, nlat, nlon, extent):
     
     return rg_c
 
+
 def trimOutsideDomain(c):
     """
     When we regrid from polar stereographic to rectalinear, the resultant
@@ -105,11 +107,14 @@ def trimOutsideDomain(c):
     """
     # assess the top layer as its likely to be free
     # of values that are maksed for terrain.
-    lonmean = np.mean(c[:, :, -1].data.mask, axis=1)
+    altdim, = c.coord_dims("altitude")
+    slices = [slice(None)]*c.ndim
+    slices[altdim] = -1
+    lonmean = np.mean(c.data[slices].mask, axis=1)
     glonmean = np.gradient(lonmean)
     uselat = (lonmean < 1.0) & (np.fabs(glonmean) < 0.004)
 
-    latmean = np.mean(c[:, :, -1].data.mask, axis=0)
+    latmean = np.mean(c.data[slices].mask, axis=0)
     glatmean = np.gradient(latmean)
     uselon = (latmean < 1.0) & (np.fabs(glatmean) < 0.004)
 
@@ -119,11 +124,14 @@ def trimOutsideDomain(c):
 def regridData(c, regrid_shape, extent):
     """
     Regrids a cube onto a nalt x nlat x nlon recatlinear cube
-    """
+    """ 
     c = restratifyAltLevels(c, regrid_shape[2])
     c = horizRegrid(c, regrid_shape[1], regrid_shape[0], extent)
     # remove the to latyer which seems to artificially masked from regridding
-    c = trimOutsideDomain(c[:, :, :-1])
+    altdim, = c.coord_dims("altitude")
+    slices = [slice(None)]*c.ndim
+    slices[altdim] = slice(0, -1)
+    c = trimOutsideDomain(c[tuple(slices)])
 
     if np.isnan(c.data.compressed().mean()):
         raise ValueError("Regridded data is NaN - are the lat/lon ranges compatable?")

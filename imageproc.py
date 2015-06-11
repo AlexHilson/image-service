@@ -1,6 +1,3 @@
-import argparse as ap
-import iris
-import io
 import numpy as np
 import png
 

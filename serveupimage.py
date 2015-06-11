@@ -2,11 +2,14 @@
 
 import argparse as ap
 import iris
+import iris.util
 import io
 
 from . import dataproc
 from . import imageproc
 from . import networking
+from . import shadowproc
+
 from . import config as conf
 
 """
@@ -51,49 +54,29 @@ def procTimeSliceToImage(
     proced_data = dataproc.procDataCube(rg_data)
 
     data_tiled = imageproc.tileArray(proced_data.data)
-    shadows_tiled = imageproc.getShadows(data_tiled)
+    shadows_tiled = shadowproc.getShadows(data_tiled)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)
 
     return img_data_out
 
 
-def procFileToImage(data, profile):
-    """
-    Wrapper round procTimeSliceToImage which slices over any time dimension
-    and parses config settings
-
-    Args:
-        * data (cube): cube of data
-        * profile (namespace): settings specific to this analysis
-            loaded from config.py
-
-    """
-
-    if "altitude" not in [_.name() for _ in data.derived_coords]:
-        raise IOError("Derived altitude coord not present - probelm with topography?")
-    
-    conf_args = (conf.img_data_server,
-                 profile.extent,
-                 profile.regrid_shape,
-                 profile.field_width,
-                 profile.field_height)
-    
-    # if statment to we can accept time, lat, lon, alt data OR lat, lon, alt data
-    if len(data.coord("time").points) > 1:
-        data.transpose([0, 3, 2, 1]) # change order of axes so that they are the same as the vis
-        for time_slice in data.slices_over("time"):
-            img_array = procTimeSliceToImage(time_slice, *conf_args)
-    else:
-        data.transpose([2, 1, 0]) # change order of axes so that they are the same as the vis
-        img_array = procTimeSliceToImage(data, *conf_args)
-
-    return img_array
-
-
 def loadCube(data_file, topog_file, constraint):
     data, topography = iris.load([data_file, topog_file])
     data = data.extract(constraint)
+
+    if "altitude" not in [_.name() for _ in data.derived_coords]:
+        raise IOError("Derived altitude coord not present - probelm with topography?")
+
+    if "time" not in [dc.name() for dc in data.dim_coords]:
+        data = iris.util.new_axis(data, "time")
+
+    tdim, = data.coord_dims(data.coords(dim_coords=True, axis="T")[0])
+    xdim, = data.coord_dims(data.coords(dim_coords=True, axis="X")[0])
+    ydim, = data.coord_dims(data.coords(dim_coords=True, axis="Y")[0])
+    zdim, = data.coord_dims(data.coords(dim_coords=True, axis="Z")[0]   )
+
+    data.transpose([tdim, xdim, ydim, zdim])
 
     return data
 
@@ -113,6 +96,12 @@ if __name__ == "__main__":
     profile = ap.Namespace(**conf.profiles[analysis_profile_name]) # get settings for this type of analysis
 
     data = loadCube(call_args.data_file, conf.topog_file, profile.constraint)
-    img_array = procFileToImage(call_args.profilename, call_args.data_file)
 
-    netowrking.postImage(img_array, data)
+    for time_slice in data.slice_over("time"):
+        img_array = procTimeSliceToImage(time_slice,
+                                         conf.img_data_server,
+                                         profile.extent,
+                                         profile.regrid_shape,
+                                         profile.field_width,
+                                         profile.field_height)
+        post_object = netowrking.postImage(img_array, data)
