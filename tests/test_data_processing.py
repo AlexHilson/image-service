@@ -19,6 +19,7 @@ class IntegrationTest(unittest.TestCase):
                                           conf.topog_file,
                                           self.profile.data_constraint)
         self.proced_data = iris.load_cube(os.path.join(fileDir, "data", "proced_data.nc"))
+        self.tiled_data = np.load(os.path.join(fileDir, "data", "tiled_data.npy"))
 
     def test_dataproc(self):
         # tidy up any problems arising from the on-the-fly altitude calc
@@ -37,9 +38,8 @@ class IntegrationTest(unittest.TestCase):
         data_tiled = imageproc.tileArray(self.proced_data.data,
                                         self.profile.field_width,
                                         self.profile.field_height)
-        np.save(os.path.join(fileDir, "data", "tiled_data.npy"), data_tiled)
 
-        # self.assertTrue(np.array_equal(data_tiled))
+        assert_array_equal(self.tiled_data, np.array_equal(data_tiled))
         
 
 if __name__ == '__main__':
