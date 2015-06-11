@@ -55,9 +55,9 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
     # swap from row major to column (or vice versa, not sure which way round this is!)
     tiled_array = tiled_array.transpose([1, 0, 2])
 
-    if (tiled_array.shape[0]**0.5)%1 != 0.0 or (tiled_array.shape[1]**0.5)%1 != 0.0:
-        raise ValueError("Dimensions for a texture must be square"
-                         " numbers i.e. sqrt(n) must be an integer")
+    is_pot = lambda n: ((n & (n - 1)) == 0) and n != 0
+    if (not is_pot(tiled_array.shape[0]) or not is_pot(tiled_array.shape[1])):
+        raise ValueError("Dimensions for a texture must be power of two")
 
     # revese first axis to be compatible with textures which read from top left
     return tiled_array[::-1, ...]

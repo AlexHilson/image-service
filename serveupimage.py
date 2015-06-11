@@ -53,7 +53,7 @@ def procTimeSliceToImage(
     # do any further processing (saturation etc) and convert to 8 bit uints
     proced_data = dataproc.procDataCube(rg_data)
 
-    data_tiled = imageproc.tileArray(proced_data.data)
+    data_tiled = imageproc.tileArray(proced_data.data, field_width, fild_height)
     shadows_tiled = shadowproc.getShadows(data_tiled)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)
@@ -68,15 +68,14 @@ def loadCube(data_file, topog_file, constraint):
     if "altitude" not in [_.name() for _ in data.derived_coords]:
         raise IOError("Derived altitude coord not present - probelm with topography?")
 
-    if "time" not in [dc.name() for dc in data.dim_coords]:
-        data = iris.util.new_axis(data, "time")
-
-    tdim, = data.coord_dims(data.coords(dim_coords=True, axis="T")[0])
     xdim, = data.coord_dims(data.coords(dim_coords=True, axis="X")[0])
     ydim, = data.coord_dims(data.coords(dim_coords=True, axis="Y")[0])
-    zdim, = data.coord_dims(data.coords(dim_coords=True, axis="Z")[0]   )
-
-    data.transpose([tdim, xdim, ydim, zdim])
+    zdim, = data.coord_dims(data.coords(dim_coords=True, axis="Z")[0])
+    try: 
+        tdim, = data.coord_dims(data.coords(dim_coords=True, axis="T")[0])
+        data.transpose([tdim, xdim, ydim, zdim])
+    except IndexError:
+        data.transpose([xdim, ydim, zdim])
 
     return data
 
