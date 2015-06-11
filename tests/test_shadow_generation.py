@@ -10,7 +10,7 @@ homeDir = os.path.dirname(__file__)
 class IntegrationTest(unittest.TestCase):
 
     def testDrawShadows(self):
-    	inPath = os.path.join(homeDir, 'img/cloud_frac_padded_623_812_70_4096_4096.png')
+    	inPath = os.path.join(homeDir,  'img/cloud_frac_padded_623_812_70_4096_4096.png')
     	outPath = os.path.join(homeDir, 'output/testtmp.png')
     	refPath = os.path.join(homeDir, 'output/ref.png')
         shadowgen.drawShadows(inputFile=inPath,
