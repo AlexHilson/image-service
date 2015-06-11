@@ -53,7 +53,7 @@ def procTimeSliceToImage(
     # do any further processing (saturation etc) and convert to 8 bit uints
     proced_data = dataproc.procDataCube(rg_data)
 
-    data_tiled = imageproc.tileArray(proced_data.data, field_width, fild_height)
+    data_tiled = imageproc.tileArray(proced_data.data, field_width, field_height)
     shadows_tiled = shadowproc.getShadows(data_tiled)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)

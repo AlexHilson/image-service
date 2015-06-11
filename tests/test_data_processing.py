@@ -33,13 +33,12 @@ class IntegrationTest(unittest.TestCase):
 
         assert_array_equal(self.proced_data.data, proced_data.data)
 
-
     def test_image_proc(self):
         data_tiled = imageproc.tileArray(self.proced_data.data,
                                         self.profile.field_width,
                                         self.profile.field_height)
 
-        assert_array_equal(self.tiled_data, np.array_equal(data_tiled))
+        assert_array_equal(self.tiled_data, data_tiled)
         
 
 if __name__ == '__main__':
