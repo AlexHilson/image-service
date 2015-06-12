@@ -25,19 +25,21 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
     This could be made more efficient using stride tricks
     
     """
+
+    if type(a) is not np.ndarray:
+        raise ValueError("a must be a np.Array, not a %s" % type(a))
     
     if padxy:
         padded_a = np.zeros([a.shape[0]+2, a.shape[1]+2, a.shape[2]])
         padded_a[1:-1, 1:-1, :] = a
     else:
         padded_a = a
-
     tiled_array = np.zeros([maxx, maxy, maxz])
     datax, datay, dataz = padded_a.shape
     maxitiles = int(maxx/datax)
     maxjtiles = int(maxy/datay)
     tilesperlayer = maxitiles * maxjtiles
-    
+
     for zslice in range(dataz):
         ztile = np.floor(zslice/tilesperlayer)
         ytile = np.floor((zslice - (ztile * tilesperlayer)) / maxitiles)
@@ -50,8 +52,7 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
         except IndexError:
             print "Output array saturated at slice", zslice
             break
-            
-        
+
     # swap from row major to column (or vice versa, not sure which way round this is!)
     tiled_array = tiled_array.transpose([1, 0, 2])
 
@@ -63,15 +64,15 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
     return tiled_array[::-1, ...]
 
     
-def writePng(array, f, height=4096, width=4096, nchannels=3, alpha="RGB"):
+def writePng(array, f, height, width, nchannels=3, alpha="RGB"):
     """
     Writes a tiled array to a png image
 
     args:
-        * array: x, y, rgba array
-        * savep: output file
+        * array: x, y, rgb(a) array
+        * f: output filelike object
         * height/width: the height/width of the image.
-            Must be a square number for use with WebGL
+            Must be a power of two number for use with WebGL
             textures. Need not be equal to each other.
 
     """

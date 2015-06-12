@@ -1,7 +1,9 @@
+import iris
 import requests
 import tempfile
 
 from . import imageproc
+from . import config as conf
 
 """
 newtorking.py contains all the function that deal with
@@ -25,7 +27,7 @@ def getPostDict(cube, mime_type="image/png"):
         return payload
 
 
-def postImage(img_data, data):
+def postImage(img_data, data, field_width, field_height):
     """
     Sends the data to the data service via a post
 
@@ -35,10 +37,10 @@ def postImage(img_data, data):
             metadata
     """
     with tempfile.SpooledTemporaryFile(max_size=2e7) as img:
-        imageproc.writePng(img_data_out, img,
+        imageproc.writePng(img_data, img,
                   height=field_height, width=field_width*2,
                   nchannels=3, alpha=False)
         payload = getPostDict(data)
-        r = requests.post(image_dest, data=payload, files={"data": img})
+        r = requests.post(conf.img_data_server, data=payload, files={"data": img})
         if r.status_code != 201:
             raise IOError(r.status_code, r.text)

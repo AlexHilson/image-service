@@ -152,8 +152,10 @@ def procDataCube(c):
     """
     c.data *= conf.max_val
     c.data = np.ma.fix_invalid(c.data, fill_value=conf.max_val)
+    c.data = np.ma.filled(c.data, fill_value=conf.max_val)
 
     return c
+
 
 if __name__ == "__main__":
     pass

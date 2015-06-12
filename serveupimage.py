@@ -103,4 +103,4 @@ if __name__ == "__main__":
                                          profile.regrid_shape,
                                          profile.field_width,
                                          profile.field_height)
-        post_object = netowrking.postImage(img_array, data)
+        post_object = networking.postImage(img_array, data, profile.field_width, profile.field_height)

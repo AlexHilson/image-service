@@ -4,7 +4,7 @@ Watchdog
 Logging
 Monty
 Numpy
-#OpenGL
+PyOpenGL
 PyPng
 PySide
 #Qt
