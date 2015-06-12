@@ -42,9 +42,10 @@ def postImage(img_data, data, field_width, field_height):
                   height=field_height, width=field_width*2,
                   nchannels=3, alpha=False)
     payload = getPostDict(data)
-    with open("temp.png", "rb") as img:
-        r = requests.post(conf.img_data_server, data=payload, files={"data": img})
-    os.remove("temp.png")
-
-    if r.status_code != 201:
-        raise IOError(r.status_code, r.text)
+    try:
+        with open("temp.png", "rb") as img:
+            r = requests.post(conf.img_data_server, data=payload, files={"data": img})
+        if r.status_code != 201:
+            raise IOError(r.status_code, r.text)
+    finally:
+        os.remove("temp.png")

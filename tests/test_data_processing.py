@@ -1,12 +1,13 @@
 import unittest
 import argparse as ap
 from iris.tests import IrisTest
-from .. import serveupimage
-from .. import dataproc
-from .. import imageproc
-from .. import shadowproc
-from .. import networking
-from .. import config as conf
+import imageservice
+from imageservice import serveupimage
+from imageservice import networking
+from imageservice import shadowproc
+from imageservice import imageproc
+from imageservice import dataproc
+from imageservice import config as conf
 import numpy as np
 import iris
 from numpy.testing import assert_array_equal

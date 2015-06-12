@@ -1,13 +1,14 @@
 Argparse
-Iris
+# Iris - conda
 Watchdog
 Logging
-Monty
+# Monty - cython build
 Numpy
 PyOpenGL
 PyPng
 PySide
 #PyQt
+#sip - conda
 Requests
 Scipy
 Vispy

@@ -1,9 +1,7 @@
 import numpy as np
 from vispy import app
 from vispy import gloo
-from vispy.io import imsave
 import OpenGL.GL as gl
-from scipy import misc
 import os
 homeDir = os.path.dirname(__file__)
 
@@ -20,9 +18,9 @@ def makeTexture(dataArray, imgWidth, imgHeight):
 
     '''
     scaledData = dataArray / dataArray.max()
-    cloudTexture = gloo.Texture2D(scaledData.astype(np.float32))
+    tex = gloo.Texture2D(scaledData.astype(np.float32))
 
-    return cloudTexture
+    return tex
 
 
 def getShader(shaderPath):
@@ -132,13 +130,13 @@ def procShadows(dataArray,
 
     c = app.Canvas(show=False, size=(width, height))
 
-    cloudTex = getCloudTexture(dataArray, width, height)
+    dataTexture = makeTexture(dataArray, width, height)
     vertexPath = os.path.join(homeDir, 'shadow_vertex.glsl')
     fragmentPath = os.path.join(homeDir, 'shadow_frag.glsl')
     vertex = getShader(vertexPath)
     fragment = getShader(fragmentPath)
 
-    program = mkProgram(vertex, fragment, cloudTex, dataShape=dataShape, textureShape=textureShape, tileLayout=tileLayout)
+    program = mkProgram(vertex, fragment, dataTexture, dataShape=dataShape, textureShape=textureShape, tileLayout=tileLayout)
     setLightPosition(program, lightPosition)
     setResolution(program, steps, alphaScale)
 
