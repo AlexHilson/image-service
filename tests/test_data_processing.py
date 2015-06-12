@@ -4,6 +4,7 @@ from iris.tests import IrisTest
 from .. import serveupimage
 from .. import dataproc
 from .. import imageproc
+from .. import shadowproc
 from .. import networking
 from .. import config as conf
 import numpy as np
@@ -42,6 +43,14 @@ class UnitTests(unittest.TestCase):
                                         self.profile.field_height)
 
         assert_array_equal(self.tiled_data, data_tiled)
+
+    def test_shadowproc(self):
+        tiled_shadows = shadowproc.procShadows(self.tiled_data)
+        import scipy
+        import scipy.misc
+        scipy.misc.imsave("./testimg.png", tiled_shadows)
+        _ = iris.cube.Cube(tiled_shadows)
+        iris.save(_, os.path.join(fileDir, "data", "tiled_shadows.nc"))
 
     def test_networking(self):
         img_out = np.concatenate([self.tiled_data, self.tiled_shadows], 1)

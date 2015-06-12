@@ -54,7 +54,7 @@ def procTimeSliceToImage(
     proced_data = dataproc.procDataCube(rg_data)
 
     data_tiled = imageproc.tileArray(proced_data.data, field_width, field_height)
-    shadows_tiled = shadowproc.getShadows(data_tiled)
+    shadows_tiled = shadowproc.procShadows(data_tiled)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)
 

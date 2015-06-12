@@ -7,7 +7,7 @@ Numpy
 PyOpenGL
 PyPng
 PySide
-#Qt
+#PyQt
 Requests
 Scipy
 Vispy
