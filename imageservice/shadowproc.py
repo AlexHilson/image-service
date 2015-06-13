@@ -5,6 +5,8 @@ import OpenGL.GL as gl
 import os
 homeDir = os.path.dirname(__file__)
 
+app.use_app("pyside")
+
 
 def makeTexture(dataArray, imgWidth, imgHeight):
     '''
