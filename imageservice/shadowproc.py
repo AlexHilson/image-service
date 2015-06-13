@@ -1,11 +1,12 @@
 import numpy as np
 from vispy import app
 from vispy import gloo
+from vispy.gloo.util import _screenshot
 import OpenGL.GL as gl
 import os
 homeDir = os.path.dirname(__file__)
 
-app.use_app("pyside")
+app.use_app("glfw")
 
 
 def makeTexture(dataArray, imgWidth, imgHeight):
@@ -106,10 +107,19 @@ def setResolution(program, steps, alphaScale):
 
 
 class Canvas(app.Canvas):
-    def __init__(self, size):
+    def __init__(self, size, tex, program):
         # We hide the canvas upon creation.
         app.Canvas.__init__(self, show=False, size=size)
+        # Texture where we render the scene.
+        self._rendertex = tex
+        # FBO.
+        self._fbo = gloo.FrameBuffer(self._rendertex,
+                                     gloo.RenderBuffer(self.size))
+        # Regular program that will be rendered to the FBO.
+        self.program = program
+        self.shadowsArray = None
 
+        self.update()
 
     def on_draw(self, event):
         # Render in the FBO.
@@ -118,14 +128,14 @@ class Canvas(app.Canvas):
             gloo.set_viewport(0, 0, *self.size)
             self.program.draw()
             # Retrieve the contents of the FBO texture.
-            self.im = _screenshot((0, 0, self.size[0], self.size[1]))
-        self._time = time() - self._t0
+            self.shadowsArray = _screenshot((0, 0, self.size[0], self.size[1]))
         # Immediately exit the application.
         app.quit()
 
+
 def procShadows(dataArray,
                 lightPosition=(20, 0, 0),
-                dataShape=(623, 812, 70),
+                dataShape=(400, 400, 30),
                 textureShape=(4096, 4096),
                 tileLayout=(6,5),
                 steps=81,
@@ -148,8 +158,6 @@ def procShadows(dataArray,
     width = textureShape[0]
     height = textureShape[1]
 
-    c = app.Canvas(show=False, size=textureShape)
-
     dataTexture = makeTexture(dataArray, width, height)
     vertexPath = os.path.join(homeDir, 'shadow_vertex.glsl')
     fragmentPath = os.path.join(homeDir, 'shadow_frag.glsl')
@@ -160,13 +168,12 @@ def procShadows(dataArray,
     setLightPosition(program, lightPosition)
     setResolution(program, steps, alphaScale)
 
-    c._fbo = gloo.FrameBuffer(dataTexture,
-                              gloo.RenderBuffer(textureShape))
-
-    c.update()
+    c = Canvas(size=textureShape, tex=dataTexture, program=program)
     app.run()
 
-    return c.shadowsArray
+    render = c.shadowsArray
+
+    return render
 
 
 if __name__ == "__main__":
