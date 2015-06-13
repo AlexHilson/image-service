@@ -103,6 +103,24 @@ def setResolution(program, steps, alphaScale):
     program['alphaCorrection'] = alphaScale/float(steps)
 
 
+class Canvas(app.Canvas):
+    def __init__(self, size):
+        # We hide the canvas upon creation.
+        app.Canvas.__init__(self, show=False, size=size)
+
+
+    def on_draw(self, event):
+        # Render in the FBO.
+        with self._fbo:
+            gloo.clear('black')
+            gloo.set_viewport(0, 0, *self.size)
+            self.program.draw()
+            # Retrieve the contents of the FBO texture.
+            self.im = _screenshot((0, 0, self.size[0], self.size[1]))
+        self._time = time() - self._t0
+        # Immediately exit the application.
+        app.quit()
+
 def procShadows(dataArray,
                 lightPosition=(20, 0, 0),
                 dataShape=(623, 812, 70),
@@ -128,7 +146,7 @@ def procShadows(dataArray,
     width = textureShape[0]
     height = textureShape[1]
 
-    c = app.Canvas(show=False, size=(width, height))
+    c = app.Canvas(show=False, size=textureShape)
 
     dataTexture = makeTexture(dataArray, width, height)
     vertexPath = os.path.join(homeDir, 'shadow_vertex.glsl')
@@ -140,16 +158,13 @@ def procShadows(dataArray,
     setLightPosition(program, lightPosition)
     setResolution(program, steps, alphaScale)
 
-    @c.connect
-    def on_draw(event):
-        gloo.clear((1,1,1,1))
-        program.draw(gl.GL_TRIANGLE_STRIP)
-        shadowsArray = gloo.util._screenshot((0, 0, c.size[0], c.size[1]))
-        c.close()
+    c._fbo = gloo.FrameBuffer(dataTexture,
+                              gloo.RenderBuffer(textureShape))
 
-        return shadowsArray
-
+    c.update()
     app.run()
+
+    return c.shadowsArray
 
 
 if __name__ == "__main__":
