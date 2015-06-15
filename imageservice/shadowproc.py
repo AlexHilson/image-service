@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy as np
 from vispy import app
 from vispy import gloo
@@ -9,13 +11,11 @@ homeDir = os.path.dirname(__file__)
 app.use_app("glfw")
 
 
-def makeTexture(dataArray, imgWidth, imgHeight):
+def makeTexture(dataArray):
     '''
     Reads an image file, converts from 0-255 to 0-1, and loads into a 2D texture.
     Args:
         * dataArray (str)
-        * imgWidth (int)
-        * ingHeight (int)
     
     returns gloo.Texture2D
 
@@ -43,7 +43,7 @@ def getShader(shaderPath):
     return shader
 
 
-def mkProgram(vShader, fShader, texture, dataShape, textureShape, tileLayout):
+def makeProgram(vShader, fShader, texture, dataShape, textureShape, tileLayout):
     '''
     Sets up a program with the given vertex and fragment shaders, and sets 
     the following shader attributes:
@@ -107,7 +107,7 @@ def setResolution(program, steps, alphaScale):
 
 
 class Canvas(app.Canvas):
-    def __init__(self, size, tex, program):
+    def __init__(self, size, program):
         # We hide the canvas upon creation.
         app.Canvas.__init__(self, show=False, size=size)
         # Texture where we render the scene.
@@ -135,10 +135,8 @@ class Canvas(app.Canvas):
 
 
 def procShadows(dataArray,
-                lightPosition=(20, 0, 0),
                 dataShape=(623, 812, 70),
-                textureShape=(4096, 4096),
-                tileLayout=(6,5),
+                lightPosition=(20, 0, 0),
                 steps=81,
                 alphaScale=2):
     '''
@@ -147,32 +145,31 @@ def procShadows(dataArray,
 
     Args:
         * dataArray (array): data for which to calculate shadows
-        * lightPosition (3-tuple): position of the point light
         * dataShape (3-tuple): 3D shape of the data field
-        * textureShape (3-tuple): shape of the input image
-        * tileLayout (2-tuple): (cols, rows) arrangement of tiles in the input PNG
+        * lightPosition (3-tuple): position of the point light
         * steps (int): how many steps to take through the data in calculations
         * alphaScale (int): factor to scale the light absorption
         
     '''
-    
-    width = textureShape[0]
-    height = textureShape[1]
 
-    dataTexture = makeTexture(dataArray, width, height)
-    vertexPath = os.path.join(homeDir, 'shadow_vertex.glsl')
-    fragmentPath = os.path.join(homeDir, 'shadow_frag.glsl')
-    vertex = getShader(vertexPath)
-    fragment = getShader(fragmentPath)
+    dataTexture = makeTexture(dataArray)
+    textureShape = dataArray.shape[:2]
+    tileLayout = (int(textureShape[0]/dataShape[0]),
+                  int(textureShape[1]/dataShape[1]))
+    vertex = getShader(os.path.join(homeDir, 'shadow_vertex.glsl'))
+    fragment = getShader(os.path.join(homeDir, 'shadow_frag.glsl'))
 
-    program = mkProgram(vertex, fragment, dataTexture, dataShape=dataShape, textureShape=textureShape, tileLayout=tileLayout)
+    program = makeProgram(vertex, fragment, dataTexture,
+                        dataShape=dataShape, 
+                        textureShape=textureShape,
+                        tileLayout=tileLayout)
     setLightPosition(program, lightPosition)
     setResolution(program, steps, alphaScale)
 
-    c = Canvas(size=textureShape, tex=dataTexture, program=program)
+    c = Canvas(size=textureShape, program=program)
     app.run()
 
-    render = c.shadowsArray
+    render = c.shadowsArray[:, :, :3]
 
     return render
 

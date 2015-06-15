@@ -23,7 +23,7 @@ class UnitTests(unittest.TestCase):
                                           self.profile.data_constraint)
         self.proced_data = iris.load_cube(os.path.join(fileDir, "data", "proced_data.nc"))
         self.tiled_data = iris.load_cube(os.path.join(fileDir, "data", "tiled_data.nc")).data
-        self.tiled_shadows = iris.load_cube(os.path.join(fileDir, "data", "tiled_data.nc")).data
+        self.tiled_shadows = iris.load_cube(os.path.join(fileDir, "data", "tiled_shadows.nc")).data
 
     def test_dataproc(self):
         # tidy up any problems arising from the on-the-fly altitude calc
@@ -46,12 +46,10 @@ class UnitTests(unittest.TestCase):
         assert_array_equal(self.tiled_data, data_tiled)
 
     def test_shadowproc(self):
-        tiled_shadows = shadowproc.procShadows(self.tiled_data)
-        import scipy
-        import scipy.misc
-        scipy.misc.imsave("./testimg.png", tiled_shadows)
-        _ = iris.cube.Cube(tiled_shadows)
-        iris.save(_, os.path.join(fileDir, "data", "tiled_shadows.nc"))
+        tiled_shadows = shadowproc.procShadows(self.tiled_data,
+                                               dataShape=(40, 38, 34))
+
+        assert_array_equal(self.tiled_shadows, tiled_shadows)
 
     def test_networking(self):
         img_out = np.concatenate([self.tiled_data, self.tiled_shadows], 1)
