@@ -111,10 +111,11 @@ class Canvas(app.Canvas):
         # We hide the canvas upon creation.
         app.Canvas.__init__(self, show=False, size=size)
         # Texture where we render the scene.
-        self._rendertex = tex
+        self.true_size = size
+        self._rendertex = gloo.Texture2D(shape=self.true_size + (4,))
         # FBO.
         self._fbo = gloo.FrameBuffer(self._rendertex,
-                                     gloo.RenderBuffer(self.size))
+                                     gloo.RenderBuffer(self.true_size))
         # Regular program that will be rendered to the FBO.
         self.program = program
         self.shadowsArray = None
@@ -124,18 +125,18 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         # Render in the FBO.
         with self._fbo:
-            gloo.clear('black')
-            gloo.set_viewport(0, 0, *self.size)
-            self.program.draw()
+            gloo.clear((1,1,1,1))
+            gloo.set_viewport(0, 0, *self.true_size)
+            self.program.draw(gl.GL_TRIANGLE_STRIP)
             # Retrieve the contents of the FBO texture.
-            self.shadowsArray = _screenshot((0, 0, self.size[0], self.size[1]))
+            self.shadowsArray = _screenshot((0, 0, self.true_size[0], self.true_size[1]))
         # Immediately exit the application.
         app.quit()
 
 
 def procShadows(dataArray,
                 lightPosition=(20, 0, 0),
-                dataShape=(400, 400, 30),
+                dataShape=(623, 812, 70),
                 textureShape=(4096, 4096),
                 tileLayout=(6,5),
                 steps=81,
