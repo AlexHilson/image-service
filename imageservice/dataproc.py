@@ -6,7 +6,8 @@ import sys
 sys.path.append("/Users/niall/Projects/monty/lib/")
 import monty.vinterp
 
-from . import config as conf
+sys.path.append(".")
+import config as conf
 
 """
 dataproc.py contains all functions which process the data

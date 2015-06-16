@@ -3,8 +3,10 @@ import requests
 import tempfile
 import os
 
-from . import imageproc
-from . import config as conf
+import sys
+sys.path.append(".")
+import imageproc
+import config as conf
 
 """
 newtorking.py contains all the function that deal with

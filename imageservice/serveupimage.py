@@ -4,13 +4,17 @@ import argparse as ap
 import iris
 import iris.util
 import io
+import numpy as np
 
-from . import dataproc
-from . import imageproc
-from . import networking
-from . import shadowproc
+import sys
+sys.path.append(".")
 
-from . import config as conf
+import dataproc
+import imageproc
+import networking
+import shadowproc
+
+import config as conf
 
 """
 serveupimage.py is the top level module for processing
@@ -92,11 +96,11 @@ def parseArgs():
 
 if __name__ == "__main__":
     call_args = parseArgs()
-    profile = ap.Namespace(**conf.profiles[analysis_profile_name]) # get settings for this type of analysis
+    profile = ap.Namespace(**conf.profiles[call_args.profilename]) # get settings for this type of analysis
 
-    data = loadCube(call_args.data_file, conf.topog_file, profile.constraint)
+    data = loadCube(call_args.data_file, conf.topog_file, profile.data_constraint)
 
-    for time_slice in data.slice_over("time"):
+    for time_slice in data.slices_over("time"):
         img_array = procTimeSliceToImage(time_slice,
                                          conf.img_data_server,
                                          profile.extent,

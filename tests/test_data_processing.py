@@ -1,5 +1,6 @@
 import unittest
 import argparse as ap
+import subprocess as sp
 from iris.tests import IrisTest
 import imageservice
 from imageservice import serveupimage
@@ -13,6 +14,8 @@ import iris
 from numpy.testing import assert_array_equal
 
 import os
+import shutil
+import time
 fileDir = os.path.dirname(__file__)
 
 class UnitTests(unittest.TestCase):
@@ -58,7 +61,12 @@ class UnitTests(unittest.TestCase):
                              self.profile.field_width,
                              self.profile.field_height)
 
-        
+
+class IntegrationTest(unittest.TestCase):
+
+    def test_integration(self):
+        sp.call(["imageservice/serveupimage.py", "--profile=default", conf.thredds_server+"test_input.pp"])
+
 
 if __name__ == '__main__':
     unittest.main()

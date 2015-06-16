@@ -35,7 +35,7 @@ if __name__ == '__main__':
             time.sleep(3)
             try:
                 logger.info("Submitting " + event.dest_path)
-                sp.Popen(["./imageproc.py", "--analysis", call_args.analysis, event.dest_path])
+                sp.Popen(["./serveupimage.py", "--profile", call_args.analysis, event.dest_path])
             except KeyboardInterrupt:
                 raise
             except BaseException as e:
