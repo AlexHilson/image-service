@@ -22,14 +22,23 @@ def getPostDict(cube, mime_type="image/png"):
 
     """
     with iris.FUTURE.context(cell_datetime_objects=True):
+        lonc, = cube.coords(dim_coords=True, axis="X")
+        latc, = cube.coords(dim_coords=True, axis="Y")
         payload = {'forecast_reference_time': cube.coord("forecast_reference_time").cell(0).point.isoformat()+".000Z",
                    'forecast_time' : cube.coord("time").cell(0).point.isoformat()+".000Z",
                    'phenomenon' : 'cloud_fraction_in_a_layer',#cube.var_name,
                    'mime_type' : mime_type,
-                   'model' : 'uk_v'}#,
-                   # 'data_dimensions': {'x': cube.shape[0], 'y': cube.shape[1], 'z': cube.shape[2]}}
-        return payload
-
+                   'model' : 'uk_v'}
+                   'data_dimensions_x': cube.shape[0],
+                   'data_dimensions_y': cube.shape[1], 
+                   'data_dimensions_z': cube.shape[2],
+                   'resolution_x': img_data.shape[0],
+                   'resolution_y': img_data.shape[1],
+                   'geographic_region': [{"lat": latc.points.min(), "lng": lonc.points.min()},
+                                         {"lat": latc.points.max(), "lng": lonc.points.min()},
+                                         {"lat": latc.points.max(), "lng": lonc.points.max()},
+                                         {"lat": latc.points.min(), "lng": lonc.points.max()}]
+                    }
 
 def postImage(img_data, data, field_width, field_height):
     """
