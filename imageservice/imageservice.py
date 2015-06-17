@@ -35,7 +35,7 @@ if __name__ == '__main__':
             time.sleep(3)
             try:
                 logger.info("Submitting " + event.dest_path)
-                sp.Popen(["./serveupimage.py", "--profile", call_args.analysis, event.dest_path])
+                sp.Popen(["./serveupimage.py", "--profile", call_args.profile, event.dest_path])
             except KeyboardInterrupt:
                 raise
             except BaseException as e:
@@ -43,13 +43,13 @@ if __name__ == '__main__':
 
     
     argparser = ap.ArgumentParser()
-    argparser.add_argument("-a", "--analysis", default="default",
+    argparser.add_argument("-a", "--profile", default="default",
         type=str, help="Name of analysis settings, as defined in config.py")
     call_args = argparser.parse_args()
 
     observer = Observer()
     observer.schedule(MyHandler(patterns=[config.source_files],
-                                ignore_patterns=["*.pp~"]),
+                                ignore_patterns=[config.source_files+"~"]),
                       path=config.thredds_server)
     observer.start()
 

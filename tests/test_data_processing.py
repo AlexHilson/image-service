@@ -21,7 +21,7 @@ fileDir = os.path.dirname(__file__)
 class UnitTests(unittest.TestCase):
     def setUp(self):
         self.profile = ap.Namespace(**conf.profiles["default"])
-        self.data = serveupimage.loadCube(os.path.join(fileDir, "data", "test_input.pp"),
+        self.data = serveupimage.loadCube(os.path.join(fileDir, "data", "test_input.nc"),
                                           conf.topog_file,
                                           self.profile.data_constraint)
         self.proced_data = iris.load_cube(os.path.join(fileDir, "data", "proced_data.nc"))
@@ -65,7 +65,10 @@ class UnitTests(unittest.TestCase):
 class IntegrationTest(unittest.TestCase):
 
     def test_integration(self):
-        sp.call(["imageservice/serveupimage.py", "--profile=default", conf.thredds_server+"test_input.pp"])
+        inputfile = os.path.join(fileDir, "data", "test_input.nc")
+        sp.call(["imageservice/serveupimage.py",
+                          "--profile=default",
+                          inputfile])
 
 
 if __name__ == '__main__':

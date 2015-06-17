@@ -2,6 +2,7 @@ import iris
 import requests
 import tempfile
 import os
+import tempfile
 
 import sys
 sys.path.append(".")
@@ -39,15 +40,16 @@ def postImage(img_data, data, field_width, field_height):
         * data (cube): The cube metadata is used for the post
             metadata
     """
-    with open("temp.png", "wb") as img:
+    tempfilep = os.path.join(tempfile.gettempdir(), "temp.png")
+    with open(tempfilep, "wb") as img:
         imageproc.writePng(img_data, img,
                   height=field_height, width=field_width*2,
                   nchannels=3, alpha=False)
     payload = getPostDict(data)
     try:
-        with open("temp.png", "rb") as img:
+        with open(tempfilep, "rb") as img:
             r = requests.post(conf.img_data_server, data=payload, files={"data": img})
         if r.status_code != 201:
             raise IOError(r.status_code, r.text)
     finally:
-        os.remove("temp.png")
+        os.remove(tempfilep)

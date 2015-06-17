@@ -5,6 +5,8 @@ import iris
 import iris.util
 import io
 import numpy as np
+import os
+import tempfile
 
 import sys
 sys.path.append(".")
@@ -66,8 +68,19 @@ def procTimeSliceToImage(
 
 
 def loadCube(data_file, topog_file, constraint):
-    data, topography = iris.load([data_file, topog_file])
-    data = data.extract(constraint)
+    """
+    Loads cube and reorders axes into appropriate structure
+
+    The Iris altitude conversion only works on pp files
+    at load time, so we need to pull the nc file from
+    OpenDAP, save a local temporary pp file and then
+    load in with the topography.
+
+    """
+    opendapcube = iris.load_cube(data_file, constraint)
+    tempfilep = os.path.join(tempfile.gettempdir(), "temporary.pp")
+    iris.save(opendapcube, tempfilep)
+    data, topography = iris.load([tempfilep, topog_file])
 
     if "altitude" not in [_.name() for _ in data.derived_coords]:
         raise IOError("Derived altitude coord not present - probelm with topography?")

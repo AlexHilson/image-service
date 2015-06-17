@@ -1,9 +1,9 @@
 import iris
 
 max_val = 255 # maximum data value (i.e. 8 bit uint)
-thredds_server = "/Users/niall/Data/PretendTHREDDS/"
+thredds_server = "http://ec2-52-16-245-62.eu-west-1.compute.amazonaws.com:8080/thredds/dodsC/testLab/"
 img_data_server = "http://ec2-52-16-246-202.eu-west-1.compute.amazonaws.com:9000/molab-3dwx-ds/media/"
-source_files = "*.pp"
+source_files = "*.nc"
 topog_file = "/Users/niall/Data/ukv/ukv_orog.pp"
 sea_level = 3 # minimum altitude number
 
