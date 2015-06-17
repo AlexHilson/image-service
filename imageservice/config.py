@@ -5,6 +5,8 @@ thredds_server = "http://ec2-52-16-245-62.eu-west-1.compute.amazonaws.com:8080/t
 img_data_server = "http://ec2-52-16-246-202.eu-west-1.compute.amazonaws.com:9000/molab-3dwx-ds/media/"
 source_files = "*.nc"
 topog_file = "/Users/niall/Data/ukv/ukv_orog.pp"
+monty_path = "/Users/niall/Projects/monty/lib/"
+
 sea_level = 3 # minimum altitude number
 
 # profiles are namespaces which contain setting for different analysis types

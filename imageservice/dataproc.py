@@ -2,12 +2,12 @@ import iris
 import numpy as np
 import png
 
-import sys
-sys.path.append("/Users/niall/Projects/monty/lib/")
-import monty.vinterp
-
 sys.path.append(".")
 import config as conf
+
+import sys
+sys.path.append(conf.monty_path)
+import monty.vinterp
 
 """
 dataproc.py contains all functions which process the data

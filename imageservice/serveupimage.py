@@ -30,13 +30,10 @@ data service. This includes:
 
 """
 
-def procTimeSliceToImage(
-               data,
-               image_dest,
-               extent,
-               regrid_shape,
-               field_width,
-               field_height):
+def procTimeSliceToImage(data,
+                         image_dest,
+                         extent,
+                         regrid_shape):
     """
     Main processing function. Processes an model_level_number, lat, lon cube,
     including all regridding and restratification of data,
@@ -47,8 +44,6 @@ def procTimeSliceToImage(
         * data (iris cube): lat, lon, model_level_number cube 
         * image_dest (str): URL to the data service image destination
         * regrid_shape (tuple): lon, lat, alt dimensions to regrid to
-        * field_width (int): image width
-        * field_height (int): image height
 
     """
 
@@ -59,7 +54,7 @@ def procTimeSliceToImage(
     # do any further processing (saturation etc) and convert to 8 bit uints
     proced_data = dataproc.procDataCube(rg_data)
 
-    data_tiled = imageproc.tileArray(proced_data.data, field_width, field_height)
+    data_tiled = imageproc.tileArray(proced_data.data)
     shadows_tiled = shadowproc.procShadows(data_tiled)
 
     img_data_out = np.concatenate([data_tiled, shadows_tiled], 2)
@@ -117,7 +112,5 @@ if __name__ == "__main__":
         img_array = procTimeSliceToImage(time_slice,
                                          conf.img_data_server,
                                          profile.extent,
-                                         profile.regrid_shape,
-                                         profile.field_width,
-                                         profile.field_height)
-        post_object = networking.postImage(img_array, data, profile.field_width, profile.field_height)
+                                         profile.regrid_shape)
+        post_object = networking.postImage(img_array, data)
