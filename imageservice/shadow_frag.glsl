@@ -12,6 +12,7 @@ uniform float alphaCorrection;
 uniform vec2 textureShape;
 uniform float texLevels;
 uniform float steps;
+uniform float ambient;
 
 float sliceW = dataShape.x;
 float sliceH = dataShape.y;
@@ -98,7 +99,7 @@ float getPathRGBA(vec3 startPos, vec3 dir, float steps, sampler2D tex){
         accumulatedLength += deltaDirectionLength;
                   
         //If the length traversed is more than the ray length, or if the alpha accumulated reaches 1.0 then exit.
-        if(accumulatedLength >= rayLength || accumulatedAlpha >= 1.0 ){
+        if(accumulatedLength >= rayLength || accumulatedAlpha >= (1.0 - ambient) ){
             break;
         }
     }

@@ -105,6 +105,16 @@ def setResolution(program, steps, alphaScale):
     program['steps'] = steps
     program['alphaCorrection'] = alphaScale/float(steps)
 
+def setAmbientLight(program, strength):
+    '''
+    Sets the amount of ambient light in the scene.
+
+    Args:
+        * program (gloo.Program)
+        * strength (float)
+    '''
+    program['ambient'] = strength
+
 
 class Canvas(app.Canvas):
     def __init__(self, size, program):
@@ -138,7 +148,8 @@ def procShadows(dataArray,
                 dataShape=(623, 812, 70),
                 lightPosition=(20, 0, 0),
                 steps=81,
-                alphaScale=2):
+                alphaScale=2,
+                ambience=0.3):
     '''
     Given a tiled data PNG file and a light position, computes the shadows
     on the data and writes them to a second PNG.
@@ -165,6 +176,7 @@ def procShadows(dataArray,
                         tileLayout=tileLayout)
     setLightPosition(program, lightPosition)
     setResolution(program, steps, alphaScale)
+    setAmbientLight(program, ambience)
 
     c = Canvas(size=textureShape, program=program)
     app.run()
