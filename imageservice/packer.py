@@ -1,12 +1,23 @@
-from np import trunc, log
-
 from __future__ import division
 
-def find_i_j(x, y, z):
+from math import trunc, log, ceil
+
+"""
+packer.py calculates the optimum dimension of an image for tilings 
+a three dimensional data array. Assumed image dimensions must 
+be square power of two numbers.
+
+"""
+
+def find_i_j(x, y, z, nchannels=3):
 	"""
 	finds the combination of i and j which minimizes the number of wasted
 	pixels for input images of dimensions x and y with number of images z
+
 	"""
+
+	z = ceil(z/nchannels) # take account having different layers of tiles
+
 	max_n = trunc(log(z * x, 2)) + 1 # n value required if all images in i direction
 	max_m = trunc(log(z * y, 2)) + 1 # m value required if all images in j direction
 
@@ -15,7 +26,7 @@ def find_i_j(x, y, z):
 
 	for n in range(1, max_n + 1):
 		for m in range(1, max_m + 1):
-			if((2**n / x) * (2**m / y) >= z):
+			if(trunc(2**n / x) * trunc(2**m / y) >= z):
 				# determines if a tile of with dimesions of n and m can contain
 				# all the images
 
@@ -36,6 +47,7 @@ def find_i_j(x, y, z):
 	j = 2**opt[2]
 
 	tile_dim = [i, j]
+
 	return tile_dim
 
 

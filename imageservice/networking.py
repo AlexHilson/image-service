@@ -31,7 +31,7 @@ def getPostDict(cube, mime_type="image/png"):
         return payload
 
 
-def postImage(img_data, data, field_width, field_height):
+def postImage(img_data, data):
     """
     Sends the data to the data service via a post
 
@@ -41,6 +41,8 @@ def postImage(img_data, data, field_width, field_height):
             metadata
     """
     tempfilep = os.path.join(tempfile.gettempdir(), "temp.png")
+
+    field_height, field_width = img_data.shape[:2]
     with open(tempfilep, "wb") as img:
         imageproc.writePng(img_data, img,
                   height=field_height, width=field_width*2,

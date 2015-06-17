@@ -7,6 +7,7 @@ from imageservice import serveupimage
 from imageservice import networking
 from imageservice import shadowproc
 from imageservice import imageproc
+from imageservice import packer
 from imageservice import dataproc
 from imageservice import config as conf
 import numpy as np
@@ -41,25 +42,22 @@ class UnitTests(unittest.TestCase):
         self.assertTrue(proced_data.data.max() <= conf.max_val)
         assert_array_equal(self.proced_data.data, proced_data.data)
 
-    def test_imageproc(self):
-        data_tiled = imageproc.tileArray(self.proced_data.data,
-                                        self.profile.field_width,
-                                        self.profile.field_height)
+    def test_packer(self):
+        self.assertEquals(packer.find_i_j(10, 20, 15, nchannels=3), [16, 128])
 
+    def test_imageproc(self):
+        data_tiled = imageproc.tileArray(self.proced_data.data)
         assert_array_equal(self.tiled_data, data_tiled)
 
     def test_shadowproc(self):
         tiled_shadows = shadowproc.procShadows(self.tiled_data,
                                                dataShape=(40, 38, 34))
-
         assert_array_equal(self.tiled_shadows, tiled_shadows)
 
     def test_networking(self):
         img_out = np.concatenate([self.tiled_data, self.tiled_shadows], 1)
         networking.postImage(img_out,
-                             self.data,
-                             self.profile.field_width,
-                             self.profile.field_height)
+                             self.data)
 
 
 class IntegrationTest(unittest.TestCase):
@@ -69,6 +67,11 @@ class IntegrationTest(unittest.TestCase):
         sp.call(["imageservice/serveupimage.py",
                           "--profile=default",
                           inputfile])
+
+
+def resetTestData(new_data_array, test_data_file):
+    _ = iris.cube.Cube(new_data_array)
+    iris.save(_, test_data_file)
 
 
 if __name__ == '__main__':

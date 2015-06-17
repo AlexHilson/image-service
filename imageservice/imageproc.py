@@ -1,6 +1,10 @@
 import numpy as np
 import png
 
+import sys
+sys.path.append(".")
+import packer
+
 """
 imageproc.py is the top level program called by the imageservice.py. It contains
 functionality dealing with the image. Called by serveupimage.py
@@ -8,7 +12,7 @@ functionality dealing with the image. Called by serveupimage.py
 """
     
 
-def tileArray(a, maxx, maxy, maxz=3, padxy=True):
+def tileArray(a, nchannels=3, padxy=True):
     """
     Flattens an x,y,z 3D array into an array of x,y tiles
     
@@ -19,12 +23,14 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
     
     Args:
         * a (numpy array): a 3d numpy array of data
-        * max<xyz> (int): the limits of the image size in pixels.
-            NB that maxz is either 1 (Grayscale), 3 (RGB) or 4 (RGBA)
+        * nchannels(int)L is either 1 (Grayscale), 3 (RGB) or 4 (RGBA)
         
     This could be made more efficient using stride tricks
     
     """
+
+    maxx, maxy = packer.find_i_j(*a.shape, nchannels=nchannels)
+    maxz = nchannels
 
     if type(a) is not np.ndarray:
         raise ValueError("a must be a np.Array, not a %s" % type(a))
@@ -64,18 +70,17 @@ def tileArray(a, maxx, maxy, maxz=3, padxy=True):
     return tiled_array[::-1, ...]
 
     
-def writePng(array, f, height, width, nchannels=3, alpha="RGB"):
+def writePng(array, f, nchannels=3, alpha="RGB"):
     """
     Writes a tiled array to a png image
 
     args:
         * array: x, y, rgb(a) array
         * f: output filelike object
-        * height/width: the height/width of the image.
-            Must be a power of two number for use with WebGL
-            textures. Need not be equal to each other.
 
     """
+
+    height, width = array.shape[:2]
     
     png_writer = png.Writer(height=height, width=width, bitdepth=8, alpha=alpha, colormap=True)
     flat_array = array.reshape(-1, width*nchannels)

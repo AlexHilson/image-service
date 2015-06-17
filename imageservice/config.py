@@ -11,12 +11,10 @@ sea_level = 3 # minimum altitude number
 profiles = {
 "default": {"data_constraint": iris.Constraint(model_level_number=lambda v: v.point < 60),
 		 "extent": [-13.62, 6.406, 47.924, 60.866],
-		 "regrid_shape": [400, 400, 35],
-		 "field_width": 2048,
-		 "field_height": 2048},
+		 "regrid_shape": [400, 400, 35]
+         },
 "ukv": {"data_constraint": iris.Constraint(model_level_number=lambda v: v.point < 60),
 		 "extent": [-13.62, 6.406, 47.924, 60.866],
-		 "regrid_shape": [400, 400, 35],
-		 "field_width": 2048,
-		 "field_height": 2048}
+		 "regrid_shape": [400, 400, 35]
+         }
 } # End of models
