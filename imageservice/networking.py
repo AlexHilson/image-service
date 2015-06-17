@@ -42,10 +42,8 @@ def postImage(img_data, data):
     """
     tempfilep = os.path.join(tempfile.gettempdir(), "temp.png")
 
-    field_height, field_width = img_data.shape[:2]
     with open(tempfilep, "wb") as img:
         imageproc.writePng(img_data, img,
-                  height=field_height, width=field_width*2,
                   nchannels=3, alpha=False)
     payload = getPostDict(data)
     try:

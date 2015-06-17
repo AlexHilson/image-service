@@ -2,10 +2,10 @@ import iris
 import numpy as np
 import png
 
+import sys
 sys.path.append(".")
 import config as conf
 
-import sys
 sys.path.append(conf.monty_path)
 import monty.vinterp
 

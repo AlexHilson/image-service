@@ -145,7 +145,7 @@ class Canvas(app.Canvas):
 
 
 def procShadows(dataArray,
-                dataShape=(623, 812, 70),
+                dataShape,
                 lightPosition=(20, 0, 0),
                 steps=81,
                 alphaScale=2,
@@ -164,7 +164,7 @@ def procShadows(dataArray,
     '''
 
     dataTexture = makeTexture(dataArray)
-    textureShape = dataArray.shape[:2]
+    textureShape = dataArray.shape[1::-1]
     tileLayout = (int(textureShape[0]/dataShape[0]),
                   int(textureShape[1]/dataShape[1]))
     vertex = getShader(os.path.join(homeDir, 'shadow_vertex.glsl'))

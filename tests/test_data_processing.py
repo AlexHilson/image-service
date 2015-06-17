@@ -52,6 +52,7 @@ class UnitTests(unittest.TestCase):
     def test_shadowproc(self):
         tiled_shadows = shadowproc.procShadows(self.tiled_data,
                                                dataShape=(40, 38, 34))
+        assert_array_equal(tiled_shadows.shape, self.tiled_data.shape)
         assert_array_equal(self.tiled_shadows, tiled_shadows)
 
     def test_networking(self):
